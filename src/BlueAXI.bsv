@@ -24,6 +24,7 @@ export AXI4_Lite_Types :: *;
 export AXI4_Lite_Master :: *;
 export AXI4_Lite_Slave :: *;
 export GenericAxi4LiteSlave :: *;
+export GenericAxi4LiteSlaveCtx :: *;
 
 export AXI4_Types :: *;
 export AXI4_Master :: *;
