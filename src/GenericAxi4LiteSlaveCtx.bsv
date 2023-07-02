@@ -189,7 +189,7 @@ module [ConfigCtx#(aw, dw)] addFifoRO#(Integer offset, FIFO#(t) f)()
 
 endmodule
 
-module [ConfigCtx#(aw, dw)] addFifo#(Integer offset, FIFO#(t) f)() 
+module [ConfigCtx#(aw, dw)] addFifoWO#(Integer offset, FIFO#(t) f)() 
     provisos(
         Bits#(t, a__),
         Mul#(b__, 8, dw),
@@ -197,10 +197,8 @@ module [ConfigCtx#(aw, dw)] addFifo#(Integer offset, FIFO#(t) f)()
     );
 
     Bit#(aw) offs = fromInteger(offset);
-    ActionValue#(Bit#(dw)) my_read = fifo_read(f);
     function Action my_write(Bit#(dw) d, Bit#(b__) strobe) = fifo_write_strobed(f, d, strobe);
     addToCollection(tagged GenericAxi4LiteSlaveCtx::WriteOperator WriteOperation { offset: offs, fun: my_write } );
-    addToCollection(tagged GenericAxi4LiteSlaveCtx::ReadOperator ReadOperation { offset: offs, fun: my_read } );
 
 endmodule
 
@@ -264,7 +262,13 @@ interface AXI4LiteConfig_ifc#(numeric type aw, numeric type dw);
     interface AXI4_Lite_Slave_Wr_Fab#(aw, dw) s_wr;
 endinterface
 
-module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, Empty) ctx)(AXI4LiteConfig_ifc#(aw, dw));
+//interface combining the external facing AXI bus interface with an internal device facing interface
+interface IntExtConfig_ifc#(numeric type aw, numeric type dw, type internal_ifc);
+    interface AXI4LiteConfig_ifc#(aw, dw) bus_ifc;
+    interface internal_ifc device_ifc;
+endinterface
+
+module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConfig_ifc#(aw, dw, i));
 
     AXI4_Lite_Slave_Rd#(aw, dw) slave_rd <- mkAXI4_Lite_Slave_Rd(8);
     AXI4_Lite_Slave_Wr#(aw, dw) slave_wr <- mkAXI4_Lite_Slave_Wr(8);
@@ -272,7 +276,7 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, Empty) ctx)(AXI4Li
     //control register for delayed operations
     Reg#(Bool) read_busy <- mkReg(False);
 
-    let {_, c} <- getCollection(ctx);
+    let {coll_device_ifc, c} <- getCollection(ctx);
     let items_read = List::concat(List::map(getReadOperator, c));
     let items_write = List::concat(List::map(getWriteOperator, c));
     let items_read_range_delayed = List::concat(List::map(getReadRangeDelayedOperator, c));
@@ -383,8 +387,12 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, Empty) ctx)(AXI4Li
     addRules(read_rules);
     addRules(write_rules);
 
-    interface s_rd = slave_rd.fab;
-    interface s_wr = slave_wr.fab;
+    interface AXI4LiteConfig_ifc bus_ifc;
+        interface s_rd = slave_rd.fab;
+        interface s_wr = slave_wr.fab;
+    endinterface
+
+    interface device_ifc = coll_device_ifc;
 
 endmodule
 
