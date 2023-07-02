@@ -4,6 +4,7 @@ import AXI4_Lite_Types :: *;
 import AXI4_Lite_Master :: *;
 import AXI4_Lite_Slave :: *;
 import GenericAxi4LiteSlave :: *;
+import GenericAxi4LiteSlaveCtx :: *;
 
 import AXI4_Types :: *;
 import AXI4_Master :: *;

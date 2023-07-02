@@ -14,7 +14,9 @@ import Vector :: *;
 import BRAM :: *;
 
 import BlueLib :: *;
-import BlueAXI :: *;
+
+import AXI4_Lite_Types :: *;
+import AXI4_Lite_Slave :: *;
 
 //context for AXI4-Lite config module
 typedef ModuleCollect#(StateOperator#(aw, dw), ifc) ConfigCtx#(numeric type aw, numeric type dw, type ifc);
@@ -142,7 +144,7 @@ module [ConfigCtx#(aw, dw)] addRegRO#(Integer offset, Reg#(t) r)() provisos(Bits
 
     Bit#(aw) offs = fromInteger(offset);
     ActionValue#(Bit#(dw)) my_read = register_read(r);
-    addToCollection(tagged GenericAXI4LiteSlaveCtx::ReadOperator ReadOperation { offset: offs, fun: my_read } );
+    addToCollection(tagged GenericAxi4LiteSlaveCtx::ReadOperator ReadOperation { offset: offs, fun: my_read } );
 
 endmodule
 
@@ -155,7 +157,7 @@ module [ConfigCtx#(aw, dw)] addRegWO#(Integer offset, Reg#(t) r)()
 
     Bit#(aw) offs = fromInteger(offset);
     function Action my_write(Bit#(dw) d, Bit#(b__) strobe) = register_write_strobed(r, d, strobe);
-    addToCollection(tagged GenericAXI4LiteSlaveCtx::WriteOperator WriteOperation { offset: offs, fun: my_write } );
+    addToCollection(tagged GenericAxi4LiteSlaveCtx::WriteOperator WriteOperation { offset: offs, fun: my_write } );
 
 endmodule
 
@@ -169,8 +171,8 @@ module [ConfigCtx#(aw, dw)] addReg#(Integer offset, Reg#(t) r)()
     Bit#(aw) offs = fromInteger(offset);
     function Action my_write(Bit#(dw) d, Bit#(b__) strobe) = register_write_strobed(r, d, strobe);
     ActionValue#(Bit#(dw)) my_read = register_read(r);
-    addToCollection(tagged GenericAXI4LiteSlaveCtx::WriteOperator WriteOperation { offset: offs, fun: my_write } );
-    addToCollection(tagged GenericAXI4LiteSlaveCtx::ReadOperator ReadOperation { offset: offs, fun: my_read } );
+    addToCollection(tagged GenericAxi4LiteSlaveCtx::WriteOperator WriteOperation { offset: offs, fun: my_write } );
+    addToCollection(tagged GenericAxi4LiteSlaveCtx::ReadOperator ReadOperation { offset: offs, fun: my_read } );
 
 endmodule
 
@@ -183,7 +185,7 @@ module [ConfigCtx#(aw, dw)] addFifoRO#(Integer offset, FIFO#(t) f)()
 
     Bit#(aw) offs = fromInteger(offset);
     ActionValue#(Bit#(dw)) my_read = fifo_read(f);
-    addToCollection(tagged GenericAXI4LiteSlaveCtx::ReadOperator ReadOperation { offset: offs, fun: my_read } );
+    addToCollection(tagged GenericAxi4LiteSlaveCtx::ReadOperator ReadOperation { offset: offs, fun: my_read } );
 
 endmodule
 
@@ -197,8 +199,8 @@ module [ConfigCtx#(aw, dw)] addFifo#(Integer offset, FIFO#(t) f)()
     Bit#(aw) offs = fromInteger(offset);
     ActionValue#(Bit#(dw)) my_read = fifo_read(f);
     function Action my_write(Bit#(dw) d, Bit#(b__) strobe) = fifo_write_strobed(f, d, strobe);
-    addToCollection(tagged GenericAXI4LiteSlaveCtx::WriteOperator WriteOperation { offset: offs, fun: my_write } );
-    addToCollection(tagged GenericAXI4LiteSlaveCtx::ReadOperator ReadOperation { offset: offs, fun: my_read } );
+    addToCollection(tagged GenericAxi4LiteSlaveCtx::WriteOperator WriteOperation { offset: offs, fun: my_write } );
+    addToCollection(tagged GenericAxi4LiteSlaveCtx::ReadOperator ReadOperation { offset: offs, fun: my_read } );
 
 endmodule
 
@@ -213,7 +215,7 @@ module [ConfigCtx#(aw, dw)] addBramRO#(Integer offset, Integer length, BRAMServe
     function Action my_read_req(Bit#(aw) a) = bram_read_request(offset, bram, a);
     ActionValue#(Bit#(dw)) my_read_resp = bram_read_response(bram);
     let my_op = ReadRangeDelayedOperation { offset: offs, length: len, request: my_read_req, response: my_read_resp };
-    addToCollection(tagged GenericAXI4LiteSlaveCtx::ReadRangeDelayedOperator my_op);
+    addToCollection(tagged GenericAxi4LiteSlaveCtx::ReadRangeDelayedOperator my_op);
 
 endmodule
 
@@ -227,7 +229,7 @@ module [ConfigCtx#(aw, dw)] addBramWO#(Integer offset, Integer length, BRAMServe
     Bit#(aw) len = fromInteger(length);
     function Action my_write_req(Bit#(aw) a, Bit#(dw) d, Bit#(TDiv#(dw, 8)) s) = bram_write_request(offset, bram, a, d, cExtend(s));
     let my_op = WriteRangeOperation { offset: offs, length: len, request: my_write_req };
-    addToCollection(tagged GenericAXI4LiteSlaveCtx::WriteRangeOperator my_op);
+    addToCollection(tagged GenericAxi4LiteSlaveCtx::WriteRangeOperator my_op);
 
 endmodule
 
