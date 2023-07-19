@@ -255,8 +255,8 @@ endmodule
 
 
 //-------------------------------------------------------------------//
-//actual config module accummulating the whole context
 
+//AXI config interface has the usual read and write slaves
 interface AXI4LiteConfig_ifc#(numeric type aw, numeric type dw);
     interface AXI4_Lite_Slave_Rd_Fab#(aw, dw) s_rd;
     interface AXI4_Lite_Slave_Wr_Fab#(aw, dw) s_wr;
@@ -268,6 +268,7 @@ interface IntExtConfig_ifc#(numeric type aw, numeric type dw, type internal_ifc)
     interface internal_ifc device_ifc;
 endinterface
 
+//actual config module accummulating the whole context
 module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConfig_ifc#(aw, dw, i));
 
     AXI4_Lite_Slave_Rd#(aw, dw) slave_rd <- mkAXI4_Lite_Slave_Rd(8);
@@ -331,6 +332,8 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConf
     end
 
     read_rules = rJoinDescendingUrgency(read_rules, rules
+        //catches reads of unpopulated addresses as well as reads
+        //beyond the defined range of a state element
         rule rread_invalid (!read_busy);
             let req <- slave_rd.request.get();
             AXI4_Lite_Read_Rs_Pkg#(dw) response;
@@ -342,6 +345,7 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConf
         endrule
     endrules);
 
+    //writes
     Integer num_writes = length(items_write);
     for(Integer i = 0; i < num_writes; i = i + 1) begin
         let write_op = items_write[i];
@@ -356,6 +360,7 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConf
         endrules, write_rules);
     end
 
+    //write ranges
     Integer num_writes_range = length(items_write_range);
     for(Integer i = 0; i < num_writes_range; i = i + 1) begin
         let write_op = items_write_range[i];
