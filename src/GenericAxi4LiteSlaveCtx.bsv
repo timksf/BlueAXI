@@ -13,8 +13,6 @@ import BUtils :: *;
 import Vector :: *;
 import BRAM :: *;
 
-import BlueLib :: *;
-
 import AXI4_Lite_Types :: *;
 import AXI4_Lite_Slave :: *;
 
@@ -341,7 +339,7 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConf
             response.data = ?;
             response.resp = DECERR;
             slave_rd.response.put(response);
-            printColorTimed(RED, $format("slave: address %h not populated with readable state element", req.addr));
+            $display("slave: address %h not populated with readable state element", req.addr);
         endrule
     endrules);
 
@@ -384,7 +382,7 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConf
             //address not populated, just return DECERR
             response.resp = DECERR;
             slave_wr.response.put(response);
-            printColorTimed(RED, $format("slave: address %h not populated with writable state element", req.addr));
+            $display("slave: address %h not populated with writable state element", req.addr);
         endrule
     endrules);
 

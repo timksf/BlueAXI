@@ -12,7 +12,7 @@ import AXI4_Slave :: *;
 import AXI4_Stream :: *;
 import GenericAxi4Master :: *;
 
-import BlueAXITests :: *;
+// import BlueAXITests :: *;
 import BlueAXIBRAM :: *;
 
 import AXI4_Monitor :: *;
@@ -33,7 +33,7 @@ export AXI4_Slave :: *;
 export AXI4_Stream :: *;
 export GenericAxi4Master :: *;
 
-export BlueAXITests :: *;
+// export BlueAXITests :: *;
 export BlueAXIBRAM :: *;
 
 export AXI4_Monitor :: *;
