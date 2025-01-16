@@ -42,7 +42,6 @@ typedef struct {
     function Action _(Bit#(aw) a, Bit#(dw) d, Bit#(TDiv#(dw, 8)) s) request;
 } WriteRangeOperation#(numeric type aw, numeric type dw);
 
-
 //"generic" operator type
 typedef union tagged {
     WriteRangeOperation#(aw, dw) WriteRangeOperator;
@@ -50,6 +49,32 @@ typedef union tagged {
     WriteOperation#(aw, dw) WriteOperator;
     ReadOperation#(aw, dw) ReadOperator;
 } StateOperator#(numeric type aw, numeric type dw);
+
+function Bit#(aw) max_op(StateOperator#(aw, dw) a, Bit#(aw) b);
+    let v = 0;
+    case(a) matches
+        tagged WriteRangeOperator .x: 
+            v = x.offset+x.length;
+        tagged ReadRangeDelayedOperator .x: 
+            v = x.offset+x.length;
+        tagged WriteOperator .x: 
+            v = x.offset;
+        tagged ReadOperator .x: 
+            v = x.offset;
+    endcase
+    if(v > b) 
+        return v;
+    else 
+        return b;
+endfunction
+
+function Integer bit_to_integer(Bit#(n) x);
+    Integer res = 0;
+    for (Integer i=0; i<valueOf(n); i=i+1)
+        if (x[i] == 1)
+            res = res + 2**i;
+    return res;
+endfunction
 
 //-------------------------------------------------------------------//
 //use these functions for aggregation of operators of same kind
@@ -269,8 +294,8 @@ endinterface
 //actual config module accummulating the whole context
 module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConfig_ifc#(aw, dw, i));
 
-    AXI4_Lite_Slave_Rd#(aw, dw) slave_rd <- mkAXI4_Lite_Slave_Rd(8);
-    AXI4_Lite_Slave_Wr#(aw, dw) slave_wr <- mkAXI4_Lite_Slave_Wr(8);
+    AXI4_Lite_Slave_Rd#(aw, dw) slave_rd <- mkAXI4_Lite_Slave_Rd(2);
+    AXI4_Lite_Slave_Wr#(aw, dw) slave_wr <- mkAXI4_Lite_Slave_Wr(2);
 
     //control register for delayed operations
     Reg#(Bool) read_busy <- mkReg(False);
@@ -281,6 +306,14 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConf
     let items_read_range_delayed = List::concat(List::map(getReadRangeDelayedOperator, c));
     let items_write_range = List::concat(List::map(getWriteRangeOperator, c));
 
+    Integer highest_addr = bit_to_integer(List::foldr(max_op, 0, c)) + 1;
+    Bit#(aw) byte_escape = ((1 << valueOf(TLog#(TDiv#(dw, 8)))) - 1); //used for correction unaligned accesses
+    Bit#(aw) addr_escape = ((1 << log2(highest_addr)) - 1) - byte_escape;
+
+    messageM("highest addr: " + integerToString(highest_addr));
+    messageM("byte escape: " + integerToString(bit_to_integer(byte_escape)));
+    messageM("addr escape: " + integerToString(bit_to_integer(addr_escape)));
+
     Rules read_rules = emptyRules();
     Rules write_rules = emptyRules();
 
@@ -288,15 +321,13 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConf
     for(Integer i = 0; i < num_reads; i = i + 1) begin
         let read_op = items_read[i];
         read_rules = rJoinMutuallyExclusive(rules
-            rule rread (read_op.offset == slave_rd.first().addr && !read_busy);
+            rule rread (read_op.offset == (slave_rd.first().addr & addr_escape) && !read_busy);
                 let req <- slave_rd.request.get();
                 Bit#(dw) retVal <- read_op.fun();
                 AXI4_Lite_Read_Rs_Pkg#(dw) response;
                 response.resp = OKAY;
                 response.data = retVal;
                 slave_rd.response.put(response);
-
-                read_busy <= False;
             endrule
         endrules, read_rules);
     end
@@ -309,7 +340,7 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConf
     Integer num_reads_range_delayed = length(items_read_range_delayed);
     for(Integer i = 0; i < num_reads_range_delayed; i = i + 1) begin
         let read_op = items_read_range_delayed[i];
-        let req_addr = slave_rd.first().addr;
+        let req_addr = slave_rd.first().addr & addr_escape;
         let addr_valid = in_range(req_addr, read_op.offset, read_op.length);
         read_rules = rJoinMutuallyExclusive(rules
             rule rrelay_read_req (addr_valid && !read_busy);            
@@ -336,8 +367,8 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConf
             let req <- slave_rd.request.get();
             AXI4_Lite_Read_Rs_Pkg#(dw) response;
             //address not populated, just return DECERR
-            response.data = ?;
-            response.resp = DECERR;
+            response.data = fromInteger(-1);
+            response.resp = OKAY;
             slave_rd.response.put(response);
             $display("slave: address %h not populated with readable state element", req.addr);
         endrule
@@ -348,7 +379,7 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConf
     for(Integer i = 0; i < num_writes; i = i + 1) begin
         let write_op = items_write[i];
         write_rules = rJoinMutuallyExclusive(rules
-            rule rwrite (write_op.offset == slave_wr.first().addr);
+            rule rwrite (write_op.offset == (slave_wr.first().addr & addr_escape));
                 let req <- slave_wr.request.get();
                 write_op.fun(req.data, req.strb);
                 AXI4_Lite_Write_Rs_Pkg response;
@@ -362,7 +393,7 @@ module [Module] axi4LiteConfigFromContext#(ConfigCtx#(aw, dw, i) ctx)(IntExtConf
     Integer num_writes_range = length(items_write_range);
     for(Integer i = 0; i < num_writes_range; i = i + 1) begin
         let write_op = items_write_range[i];
-        let req_addr = slave_wr.first().addr;
+        let req_addr = slave_wr.first().addr & addr_escape;
         let addr_valid = in_range(req_addr, write_op.offset, write_op.length);
         write_rules = rJoinMutuallyExclusive(rules
             rule rwrite_range (addr_valid);
