@@ -163,6 +163,14 @@ function Action bram_write_request(Integer offset, BRAMServerBE#(a, b, c) bram, 
     endaction
 endfunction
 
+module [ConfigCtx#(aw, dw)] addValueRO#(Integer offset, t v)() provisos(Bits#(t, a__));
+
+    Bit#(aw) offs = fromInteger(offset);
+    ActionValue#(Bit#(dw)) my_read = actionvalue return cExtend(v); endactionvalue;
+    addToCollection(tagged GenericAxi4LiteSlaveCtx::ReadOperator ReadOperation { offset: offs, fun: my_read } );
+
+endmodule
+
 module [ConfigCtx#(aw, dw)] addRegRO#(Integer offset, Reg#(t) r)() provisos(Bits#(t, a__));
 
     Bit#(aw) offs = fromInteger(offset);
