@@ -149,7 +149,7 @@ endmodule
 
 /*
 ========================
-    AXI 4 Lite Master Write
+    AXI 4 Master Write
 ========================
 */
 (* always_ready, always_enabled *)
