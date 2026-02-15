@@ -61,7 +61,7 @@ function Action bramWriter(Integer start, BRAMServerBE#(a, b, c) bramPort,
     action
         addr = addr - fromInteger(start);
         Bit#(a_sz) regNum = zExtend(addr >> valueOf(TLog#(TDiv#(b_sz, 8))));
-        bramPort.request.put(BRAMRequestBE {writeen: s, responseOnWrite: False, address: unpack(regNum), datain: unpack(d)});
+        if(s!=0) bramPort.request.put(BRAMRequestBE {writeen: s, responseOnWrite: False, address: unpack(regNum), datain: unpack(d)});
     endaction
 endfunction
 
@@ -323,8 +323,6 @@ module mkGenericAxi4LiteSlave#(List#(RegisterOperator#(axiAddrWidth, axiDataWidt
         endrule
     endrules);
 
-    addRules(readRules);
-
     Wire#(Bool) writeIsHandled <- mkDWire(False);
     Reg#(Bool) writeBusy <- mkReg(False);
 
@@ -404,7 +402,7 @@ module mkGenericAxi4LiteSlave#(List#(RegisterOperator#(axiAddrWidth, axiDataWidt
         endrule
     endrules);
 
-    addRules(writeRules);
+    addRules(rJoinDescendingUrgency(readRules, writeRules));
 
     interface s_rd  = readSlave.fab;
     interface s_wr  = writeSlave.fab;

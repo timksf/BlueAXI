@@ -19,6 +19,7 @@ typedef struct {
 		Bit#(userwidth) user;
 		Bit#(TDiv#(datawidth, 8)) keep;
 		Bit#(4) dest;
+		Bit#(8) id;
 		Bool last;
 	} AXI4_Stream_Pkg#(numeric type datawidth, numeric type userwidth) deriving(Bits, Eq, FShow);
 
@@ -42,6 +43,7 @@ interface AXI4_Stream_Rd_Fab#(numeric type datawidth, numeric type userwidth);
   (*prefix=""*)method Action ptuser((*port="tuser"*)Bit#(userwidth) user);
   (*prefix=""*)method Action ptkeep((*port="tkeep"*)Bit#(TDiv#(datawidth, 8)) keep);
   (*prefix=""*)method Action ptDest((*port="tDest"*)Bit#(4) dest);
+  (*prefix=""*)method Action ptid((*port="tid"*)Bit#(8) id);
   (*prefix=""*)method Action ptlast((*port="tlast"*)Bool last);
 endinterface
 
@@ -61,6 +63,7 @@ module mkAXI4_Stream_Rd#(Integer bufferSize)(AXI4_Stream_Rd#(datawidth, userwidt
 	Wire#(Bit#(userwidth)) 			  userIn <- mkBypassWire();
 	Wire#(Bit#(keepwidth))	 		  keepIn <- mkBypassWire();
     Wire#(Bit#(4))	 		          destIn <- mkBypassWire();
+	Wire#(Bit#(8))	 		          idIn   <- mkBypassWire();
 	Wire#(Bool) 					  lastIn <- mkBypassWire();
 
 	FIFOF#(AXI4_Stream_Pkg#(datawidth, userwidth)) in <- mkSizedFIFOF(bufferSize);
@@ -75,6 +78,7 @@ module mkAXI4_Stream_Rd#(Integer bufferSize)(AXI4_Stream_Rd#(datawidth, userwidt
 		s.user = userIn;
 		s.keep = keepIn;
 		s.dest = destIn;
+		s.id   = idIn;
 		s.last = lastIn;
 		in.enq(s);
 	endrule
@@ -88,6 +92,7 @@ module mkAXI4_Stream_Rd#(Integer bufferSize)(AXI4_Stream_Rd#(datawidth, userwidt
 		interface ptuser = userIn._write;
 		interface ptkeep = keepIn._write;
 		interface ptDest = destIn._write;
+		interface ptid   = idIn._write;
 		interface ptlast = lastIn._write;
 	endinterface
 endmodule
@@ -107,6 +112,7 @@ interface AXI4_Stream_Wr_Fab#(numeric type datawidth, numeric type userwidth);
   method Bit#(userwidth) tuser;
   method Bit#(TDiv#(datawidth, 8)) tkeep;
   method Bit#(4) tDest;
+  method Bit#(8) tid;
 endinterface
 
 interface AXI4_Stream_Wr#(numeric type datawidth, numeric type userwidth);
@@ -132,6 +138,7 @@ module mkAXI4_Stream_Wr#(Integer bufferSize)(AXI4_Stream_Wr#(datawidth, userwidt
 	Wire#(Bit#(userwidth)) tuserOut <- mkDWire(unpack(0));
 	Wire#(Bit#(keepwidth)) tkeepOut <- mkDWire(unpack(0));
 	Wire#(Bit#(4)) tdestOut <- mkDWire(unpack(0));
+	Wire#(Bit#(8)) tidOut <- mkDWire(unpack(0));
 	Wire#(Bool) tlastOut <- mkDWire(False);
 
 	rule deqFIFO if(!isRst && treadyIn && out.notEmpty());
@@ -144,6 +151,7 @@ module mkAXI4_Stream_Wr#(Integer bufferSize)(AXI4_Stream_Wr#(datawidth, userwidt
 		tuserOut <= out.first().user();
 		tkeepOut <= out.first().keep();
 		tdestOut <= out.first().dest();
+		tidOut   <= out.first().id();
 	endrule
 
 	interface AXI4_Stream_Wr_Fab fab;
@@ -154,6 +162,7 @@ module mkAXI4_Stream_Wr#(Integer bufferSize)(AXI4_Stream_Wr#(datawidth, userwidt
 		interface tuser = tuserOut;
 		interface tkeep = tkeepOut;
 		interface tDest = tdestOut;
+		interface tid = tidOut;
 	endinterface
 
 	interface Put pkg = toPut(out);
@@ -171,6 +180,7 @@ module mkAXI4_Stream_Wr_Dummy(AXI4_Stream_Wr#(datawidth, userwidth));
 		interface tuser = 0;
 		interface tkeep = 0;
 		interface tDest = 0;
+		interface tid = 0;
 		method Action ptready(Bool tr);
 		endmethod
 	endinterface
@@ -193,6 +203,8 @@ module mkAXI4_Stream_Rd_Dummy(AXI4_Stream_Rd#(datawidth, userwidth));
   		endmethod
   		method Action ptDest(Bit#(4) dest);
   		endmethod
+		method Action ptid(Bit#(8) id);
+		endmethod
   		method Action ptlast(Bool last);
   		endmethod
 	endinterface
@@ -233,6 +245,9 @@ instance Connectable#(AXI4_Stream_Wr_Fab#(datawidth, userwidth), AXI4_Stream_Rd_
 		endrule
 		rule forward7;
 			rd.ptDest(wr.tDest());
+		endrule
+		rule forward8;
+			rd.ptid(wr.tid());
 		endrule
 
 	endmodule

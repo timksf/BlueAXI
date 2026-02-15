@@ -71,7 +71,7 @@ Have the Bluespec compiler installed.
 
 1. Clone the repo
 ```sh
-git clone github.com/esa-tu-darmstadt/BlueAXI.git
+git clone https://github.com/esa-tu-darmstadt/BlueAXI.git
 ```
 3. Import `BlueAXI` or a part of the packet in your Bluespec packet:
 ```
