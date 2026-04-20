@@ -42,4 +42,7 @@ export AXI3_Types :: *;
 export AXI3_Master :: *;
 export AXI3_Slave :: *;
 
+import AXI4_Lite_Test :: *;
+export AXI4_Lite_Test :: *;
+
 endpackage
