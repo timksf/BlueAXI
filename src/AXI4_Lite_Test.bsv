@@ -38,7 +38,7 @@ function Stmt wait_bit_not_set(
         Reg#(Bit#(32)) rg_rsp
     );
     return seq
-        rg_rsp <= 0;
+        rg_rsp <= unpack(-1);
         while (unpack(rg_rsp[bitpos])) seq
             axil_read(cfg_rd, fromInteger(address), rg_rsp);
         endseq
