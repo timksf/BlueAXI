@@ -21,6 +21,8 @@ import AXI3_Types :: *;
 import AXI3_Master :: *;
 import AXI3_Slave :: *;
 
+import BlueBus :: *;
+
 export AXI4_Lite_Types :: *;
 export AXI4_Lite_Master :: *;
 export AXI4_Lite_Slave :: *;
@@ -41,5 +43,7 @@ export AXI4_Monitor :: *;
 export AXI3_Types :: *;
 export AXI3_Master :: *;
 export AXI3_Slave :: *;
+
+export BlueBus :: *;
 
 endpackage
