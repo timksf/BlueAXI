@@ -15,14 +15,14 @@ typedef ModuleCollect#(RegMapEntry#(dw), ifc) BlueBusCtx_t#(numeric type dw, typ
 
 typedef struct {
     Integer offset;
-    String name;
+    String identifier;
     String description;
 } RegDef_t;
 
 typedef struct {
     Integer offset;
+    String identifier;
     String name;
-    String long_name;
     String description;
 } RegFieldDef_t;
 
@@ -80,16 +80,16 @@ function ActionValue#(Bit#(dw)) field_read_impure(Reg#(t) r, Integer field_offs)
     endactionvalue
 endfunction
 
-module [BlueBusCtx_t#(dw)] blue_reg_def#(Integer offs, String name, String desc)();
+module [BlueBusCtx_t#(dw)] blue_reg_def#(Integer offs, String ident, String desc)();
     RegMapEntry#(dw) entry = tagged RegDef RegDef_t {
         offset:         offs,
-        name:           name,
+        identifier:     ident,
         description:    desc
     };
     addToCollection(entry);
 endmodule
 
-module [BlueBusCtx_t#(dw)] blue_reg_co#(Integer offs, t v, Integer bitpos, String name, String lname, String desc)() 
+module [BlueBusCtx_t#(dw)] blue_reg_co#(Integer offs, t v, Integer bitpos, String ident, String name, String desc)() 
     provisos(
         Bits#(t, sz_t),
         FieldReadPure#(t, dw)
@@ -97,47 +97,37 @@ module [BlueBusCtx_t#(dw)] blue_reg_co#(Integer offs, t v, Integer bitpos, Strin
     function Bit#(dw) do_read(Bit#(aw) _a);
         return field_read_pure(v, bitpos);
     endfunction
-    addToCollection(
-        tagged ReadOpPure ReadOpPure_t {
-            offs: offs,
-            f_read: do_read
-        }
-    );
+    addToCollection(tagged ReadOpPure ReadOpPure_t { offs: offs, f_read: do_read });
 
     RegMapEntry#(dw) field_entry = tagged RegFieldDef RegFieldDef_t {
         offset:         offs,
-        name:           name,
-        long_name:      lname,
+        identifier:     ident,
         description:    desc
     };
     addToCollection(field_entry);
-
 endmodule
 
-module [BlueBusCtx_t#(dw)] blue_reg_rw#(Integer offs, Reg#(t) r, Integer bitpos, String name, String lname, String desc)() 
+module [BlueBusCtx_t#(dw)] blue_reg_rw#(Integer offs, t rv, Integer bitpos, String ident, String fname, String desc)(Reg#(t)) 
     provisos(
         Bits#(t, sz_t),
         FieldReadPure#(t, dw)
     );
-    function ActionValue#(Bit#(dw)) do_read(Bit#(aw) _a);
-        actionvalue
-            return field_read_pure(r, bitpos);
-        endactionvalue
+
+    Reg#(t) r <- mkReg(rv);
+    function Bit#(dw) do_read(Bit#(aw) _a);
+        return field_read_pure(r, bitpos);
     endfunction
-    addToCollection(
-        tagged ReadOpImpure ReadOpImpure_t {
-            offs: offs,
-            f_read: do_read
-        }
-    );
+    addToCollection(tagged ReadOpPure ReadOpPure_t { offs: offs, f_read: do_read } );
 
     RegMapEntry#(dw) field_entry = tagged RegFieldDef RegFieldDef_t {
         offset:         offs,
-        name:           name,
-        long_name:      lname,
+        identifier:     ident,
+        name:           fname,
         description:    desc
     };
     addToCollection(field_entry);
+
+    return r;
 endmodule
 
 interface BusAccess_ifc#(type ext_ifc, type int_ifc);
@@ -161,7 +151,7 @@ module [Module] doc_blue_bus#(BlueBusCtx_t#(dw, i) ctx)(RegMapDoc_t#(dw));
     endfunction
 
     function String doc_reg(RegDef_t regdef);
-        return "" + integerToHex(regdef.offset) + " " + regdef.name + " " + regdef.description;
+        return "" + integerToHex(regdef.offset) + " " + regdef.identifier + " " + regdef.description;
     endfunction
 
     String reg_doc = List::foldl(strConcat, "", List::map(strConcat("\n"), List::map(doc_reg, regdefs)));
@@ -178,7 +168,6 @@ module [Module] create_blue_bus#(BlueBusCtx_t#(dw, i) ctx)(BlueBusAccess_ifc#(aw
 
     let pure_reads = List::concat(List::map(get_pure_read, c));
 
-    // Pure read: fold over all ReadOpPure entries, OR-ing results for matching addresses.
     function Bit#(dw) do_read_pure(Bit#(aw) addr);
         function Bit#(dw) fold_fn(Bit#(dw) acc, RegMapEntry#(dw) entry);
             case (entry) matches
@@ -190,28 +179,6 @@ module [Module] create_blue_bus#(BlueBusCtx_t#(dw, i) ctx)(BlueBusAccess_ifc#(aw
         return foldl(fold_fn, 0, c);
     endfunction
 
-    // Impure read: recursively walk the list, executing ActionValue reads for matching entries.
-    // List length is elaboration-time constant, so BSC can unroll this statically.
-    function ActionValue#(Bit#(dw)) do_read_impure_list(Bit#(aw) addr, List#(RegMapEntry#(dw)) lst);
-        actionvalue
-            if (isNull(lst))
-                return 0;
-            else begin
-                let h = head(lst);
-                Bit#(dw) rest <- do_read_impure_list(addr, tail(lst));
-                case (h) matches
-                    tagged ReadOpImpure .op:
-                        if (fromInteger(op.offs) == addr) begin
-                            Bit#(dw) r <- op.f_read(addr);
-                            return rest | r;
-                        end else
-                            return rest;
-                    default: return rest;
-                endcase
-            end
-        endactionvalue
-    endfunction
-
     interface BlueBus_ifc external;
         method Action write_strobed(Bit#(aw) addr, Bit#(dw) data, Bit#(TDiv#(dw, 8)) strobe);
             noAction;
@@ -221,12 +188,6 @@ module [Module] create_blue_bus#(BlueBusCtx_t#(dw, i) ctx)(BlueBusAccess_ifc#(aw
             return do_read_pure(addr);
         endmethod
 
-        method ActionValue#(Bit#(dw)) read_impure(Bit#(aw) addr);
-            actionvalue
-                Bit#(dw) impure_v <- do_read_impure_list(addr, c);
-                return do_read_pure(addr) | impure_v;
-            endactionvalue
-        endmethod
     endinterface
 
     interface internal = coll_device_ifc;
