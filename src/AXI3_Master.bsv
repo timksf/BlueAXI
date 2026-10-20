@@ -370,59 +370,98 @@ endinstance
 
 module mkAXI3_Master_Rd_Dummy(AXI3_Master_Rd#(addrwidth, datawidth, id_width));
     interface AXI3_Master_Rd_Fab fab;
-        interface arvalid = False;
-        interface arid = unpack(0);
-        interface araddr = unpack(0);
-        interface arlen = unpack(0);
-        interface arsize = unpack(0);
-        interface arburst = unpack(0) ;
-        interface arlock = unpack(0);
-        interface arcache = unpack(0) ;
-        interface arprot = unpack(0);
-
-        interface rready = False;
-
-        method Action prvalid(Bool v);
-        endmethod
-        method Action prchannel(Bit#(id_width) id,
-                                            Bit#(datawidth) d,
-                                            AXI3_Response resp,
-                                            Bool last);
-        endmethod
-
+        method arvalid = False;
         method Action parready(Bool a);
+            noAction;
         endmethod
-  endinterface
+        method arid = unpack(0);
+        method araddr = unpack(0);
+        method arlen = unpack(0);
+        method arsize = unpack(0);
+        method arburst = unpack(0);
+        method arlock = unpack(0);
+        method arcache = unpack(0);
+        method arprot = unpack(0);
+        method rready = False;
+        method Action prvalid(Bool v);
+            noAction;
+        endmethod
+        method Action prchannel(Bit#(id_width) id, Bit#(datawidth) d, AXI3_Response resp, Bool last);
+            noAction;
+        endmethod
+    endinterface
+
+    interface Put request;
+        method Action put(AXI3_Read_Rq#(addrwidth, id_width) value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
+    interface Get response;
+        method ActionValue#(AXI3_Read_Rs#(datawidth, id_width)) get() if(False);
+            return unpack(0);
+        endmethod
+    endinterface
+
+    method AXI3_Read_Rs#(datawidth, id_width) snoop() if(False);
+        return unpack(0);
+    endmethod
+
 endmodule
 
 module mkAXI3_Master_Wr_Dummy(AXI3_Master_Wr#(addrwidth, datawidth, id_width));
     interface AXI3_Master_Wr_Fab fab;
-        interface awvalid   = False;
-        interface awid      = unpack(0);
-        interface awaddr    = unpack(0);
-        interface awlen     = unpack(0);
-        interface awsize    = unpack(0);
-        interface awburst   = unpack(0);
-        interface awlock    = unpack(0);
-        interface awcache   = unpack(0);
-        interface awprot    = unpack(0);
-
-        interface wvalid    = False;
-        interface wdata     = unpack(0);
-        interface wstrb     = unpack(0);
-        interface wlast     = unpack(0);
-
-        interface bready = False;
-
         method Action pawready(Bool r);
+            noAction;
         endmethod
+        method awvalid = False;
+        method awid = unpack(0);
+        method awaddr = unpack(0);
+        method awlen = unpack(0);
+        method awsize = unpack(0);
+        method awburst = unpack(0);
+        method awlock = unpack(0);
+        method awcache = unpack(0);
+        method awprot = unpack(0);
         method Action pwready(Bool r);
+            noAction;
         endmethod
+        method wvalid = False;
+        method wid = unpack(0);
+        method wdata = unpack(0);
+        method wstrb = unpack(0);
+        method wlast = unpack(0);
         method Action pbvalid(Bool b);
+            noAction;
         endmethod
+        method bready = False;
         method Action bin(AXI3_Response r, Bit#(id_width) bid);
+            noAction;
         endmethod
     endinterface
+
+    interface Put request_addr;
+        method Action put(AXI3_Write_Rq_Addr#(addrwidth, id_width) value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
+    interface Put request_data;
+        method Action put(AXI3_Write_Rq_Data#(datawidth, id_width) value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
+    interface Get response;
+        method ActionValue#(AXI3_Write_Rs#(id_width)) get() if(False);
+            return unpack(0);
+        endmethod
+    endinterface
+
+    method AXI3_Write_Rs#(id_width) snoop() if(False);
+        return unpack(0);
+    endmethod
+
 endmodule
 
 // Helper functions to simplify usage of the above modules

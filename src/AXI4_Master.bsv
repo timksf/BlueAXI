@@ -396,67 +396,105 @@ endinstance
 
 module mkAXI4_Master_Rd_Dummy(AXI4_Master_Rd#(addrwidth, datawidth, id_width, user_width));
     interface AXI4_Master_Rd_Fab fab;
-        interface arvalid = False;
-        interface arid = unpack(0);
-        interface araddr = unpack(0);
-        interface arlen = unpack(0);
-        interface arsize = unpack(0);
-        interface arburst = unpack(0) ;
-        interface arlock = unpack(0);
-        interface arcache = unpack(0) ;
-        interface arprot = unpack(0);
-        interface arqos = unpack(0);
-        interface arregion = unpack(0);
-        interface aruser = unpack(0);
-
-        interface rready = False;
-
-        method Action prvalid(Bool v);
-        endmethod
-        method Action prchannel(Bit#(id_width) id,
-                                            Bit#(datawidth) d,
-                                            AXI4_Response resp,
-                                            Bool last,
-                                            Bit#(user_width) user);
-        endmethod
-
+        method arvalid = False;
         method Action parready(Bool a);
+            noAction;
         endmethod
-  endinterface
+        method arid = unpack(0);
+        method araddr = unpack(0);
+        method arlen = unpack(0);
+        method arsize = unpack(0);
+        method arburst = unpack(0);
+        method arlock = unpack(0);
+        method arcache = unpack(0);
+        method arprot = unpack(0);
+        method arqos = unpack(0);
+        method arregion = unpack(0);
+        method aruser = unpack(0);
+        method rready = False;
+        method Action prvalid(Bool v);
+            noAction;
+        endmethod
+        method Action prchannel(Bit#(id_width) id, Bit#(datawidth) d, AXI4_Response resp, Bool last,
+            Bit#(user_width) user);
+            noAction;
+        endmethod
+    endinterface
+
+    interface Put request;
+        method Action put(AXI4_Read_Rq#(addrwidth, id_width, user_width) value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
+    interface Get response;
+        method ActionValue#(AXI4_Read_Rs#(datawidth, id_width, user_width)) get() if(False);
+            return unpack(0);
+        endmethod
+    endinterface
+
+    method AXI4_Read_Rs#(datawidth, id_width, user_width) snoop() if(False);
+        return unpack(0);
+    endmethod
+
 endmodule
 
 module mkAXI4_Master_Wr_Dummy(AXI4_Master_Wr#(addrwidth, datawidth, id_width, user_width));
     interface AXI4_Master_Wr_Fab fab;
-        interface awvalid   = False;
-        interface awid      = unpack(0);
-        interface awaddr    = unpack(0);
-        interface awlen     = unpack(0);
-        interface awsize    = unpack(0);
-        interface awburst   = unpack(0);
-        interface awlock    = unpack(0);
-        interface awcache   = unpack(0);
-        interface awprot    = unpack(0);
-        interface awqos     = unpack(0);
-        interface awregion  = unpack(0);
-        interface awuser    = unpack(0);
-
-        interface wvalid    = False;
-        interface wdata     = unpack(0);
-        interface wstrb     = unpack(0);
-        interface wlast     = unpack(0);
-        interface wuser     = unpack(0);
-
-        interface bready = False;
-
         method Action pawready(Bool r);
+            noAction;
         endmethod
+        method awvalid = False;
+        method awid = unpack(0);
+        method awaddr = unpack(0);
+        method awlen = unpack(0);
+        method awsize = unpack(0);
+        method awburst = unpack(0);
+        method awlock = unpack(0);
+        method awcache = unpack(0);
+        method awprot = unpack(0);
+        method awqos = unpack(0);
+        method awregion = unpack(0);
+        method awuser = unpack(0);
         method Action pwready(Bool r);
+            noAction;
         endmethod
+        method wvalid = False;
+        method wdata = unpack(0);
+        method wstrb = unpack(0);
+        method wlast = unpack(0);
+        method wuser = unpack(0);
         method Action pbvalid(Bool b);
+            noAction;
         endmethod
+        method bready = False;
         method Action bin(AXI4_Response r, Bit#(id_width) bid, Bit#(user_width) buser);
+            noAction;
         endmethod
     endinterface
+
+    interface Put request_addr;
+        method Action put(AXI4_Write_Rq_Addr#(addrwidth, id_width, user_width) value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
+    interface Put request_data;
+        method Action put(AXI4_Write_Rq_Data#(datawidth, user_width) value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
+    interface Get response;
+        method ActionValue#(AXI4_Write_Rs#(id_width, user_width)) get() if(False);
+            return unpack(0);
+        endmethod
+    endinterface
+
+    method AXI4_Write_Rs#(id_width, user_width) snoop() if(False);
+        return unpack(0);
+    endmethod
+
 endmodule
 
 // Helper functions to simplify usage of the above modules

@@ -124,13 +124,37 @@ endmodule
 
 module mkAXI3_Slave_Rd_Dummy(AXI3_Slave_Rd#(addrwidth, datawidth, id_width));
     interface AXI3_Slave_Rd_Fab fab;
-        interface arready = False;
-        interface rvalid = False;
-        interface rid = unpack(0);
-        interface rdata = unpack(0);
-        interface rresp = unpack(0);
-        interface rlast = unpack(0);
+        method Action parvalid(Bool v);
+            noAction;
+        endmethod
+        method arready = False;
+        method Action parchannel(Bit#(id_width) id, Bit#(addrwidth) addr, UInt#(AXI3_BURST_SIZE) burst_length,
+            AXI3_BurstSize burst_size, AXI3_BurstType burst_type, AXI3_Lock lock, AXI3_Read_Cache cache,
+            AXI3_Prot prot );
+            noAction;
+        endmethod
+        method Action prready(Bool r);
+            noAction;
+        endmethod
+        method rvalid = False;
+        method rid = unpack(0);
+        method rdata = unpack(0);
+        method rresp = unpack(0);
+        method rlast = unpack(0);
     endinterface
+
+    interface Get request;
+        method ActionValue#(AXI3_Read_Rq#(addrwidth, id_width)) get() if(False);
+            return unpack(0);
+        endmethod
+    endinterface
+
+    interface Put response;
+        method Action put(AXI3_Read_Rs#(datawidth, id_width) value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
 endmodule
 
 /*
@@ -280,15 +304,50 @@ module mkAXI3_Slave_Wr#(Integer bufferSizeAddr, Integer bufferSizeData, Integer 
 endmodule
 
 module mkAXI3_Slave_Wr_Dummy(AXI3_Slave_Wr#(addrwidth, datawidth, id_width));
-      interface AXI3_Slave_Wr_Fab fab;
-        interface awready = False;
-
-        interface wready = False;
-
-        interface bvalid = False;
-        interface bresp = unpack(0);
-        interface bid = unpack(0);
+    interface AXI3_Slave_Wr_Fab fab;
+        method awready = False;
+        method Action pawvalid(Bool v);
+            noAction;
+        endmethod
+        method Action pawchannel(Bit#(id_width) id, Bit#(addrwidth) addr, UInt#(AXI3_BURST_SIZE) burst_length,
+            AXI3_BurstSize burst_size, AXI3_BurstType burst_type, AXI3_Lock lock, AXI3_Write_Cache cache,
+            AXI3_Prot prot );
+            noAction;
+        endmethod
+        method wready = False;
+        method Action pwvalid(Bool r);
+            noAction;
+        endmethod
+        method Action pwchannel(Bit#(id_width) id, Bit#(datawidth) data, Bit#(TDiv#(datawidth, 8)) strb, Bool
+            last );
+            noAction;
+        endmethod
+        method Action pbready(Bool r);
+            noAction;
+        endmethod
+        method bvalid = False;
+        method bresp = unpack(0);
+        method bid = unpack(0);
     endinterface
+
+    interface Get request_addr;
+        method ActionValue#(AXI3_Write_Rq_Addr#(addrwidth, id_width)) get() if(False);
+            return unpack(0);
+        endmethod
+    endinterface
+
+    interface Get request_data;
+        method ActionValue#(AXI3_Write_Rq_Data#(datawidth, id_width)) get() if(False);
+            return unpack(0);
+        endmethod
+    endinterface
+
+    interface Put response;
+        method Action put(AXI3_Write_Rs#(id_width) value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
 endmodule
 
 endpackage

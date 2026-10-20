@@ -263,26 +263,73 @@ endinstance
 
 module mkAXI4_Lite_Master_Rd_Dummy(AXI4_Lite_Master_Rd#(addrwidth, datawidth));
     interface AXI4_Lite_Master_Rd_Fab fab;
-    	interface arvalid = False;
-    	interface araddr = unpack(0);
-    	interface arprot = unpack(0);
-
-    	interface rready = False;
+        method arvalid = False;
+        method Action parready(Bool a);
+            noAction;
+        endmethod
+        method araddr = unpack(0);
+        method arprot = unpack(0);
+        method rready = False;
+        method Action prvalid(Bool v);
+            noAction;
+        endmethod
+        method Action prdata( Bit#(datawidth) d);
+            noAction;
+        endmethod
+        method Action prresp(AXI4_Lite_Response resp);
+            noAction;
+        endmethod
     endinterface
+
+    interface Put request;
+        method Action put(AXI4_Lite_Read_Rq_Pkg#(addrwidth) value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
+    interface Get response;
+        method ActionValue#(AXI4_Lite_Read_Rs_Pkg#(datawidth)) get() if(False);
+            return unpack(0);
+        endmethod
+    endinterface
+
 endmodule
 
 module mkAXI4_Lite_Master_Wr_Dummy(AXI4_Lite_Master_Wr#(addrwidth, datawidth));
     interface AXI4_Lite_Master_Wr_Fab fab;
-    	interface awvalid = False;
-    	interface awaddr = unpack(0);
-    	interface awprot = unpack(0);
-
-    	interface wvalid = False;
-    	interface wdata = unpack(0);
-    	interface wstrb = unpack(0);
-
-    	interface bready = False;
+        method Action pawready(Bool r);
+            noAction;
+        endmethod
+        method awvalid = False;
+        method awaddr = unpack(0);
+        method awprot = unpack(0);
+        method Action pwready(Bool r);
+            noAction;
+        endmethod
+        method wvalid = False;
+        method wdata = unpack(0);
+        method wstrb = unpack(0);
+        method Action pbvalid(Bool b);
+            noAction;
+        endmethod
+        method bready = False;
+        method Action pbresp(AXI4_Lite_Response r);
+            noAction;
+        endmethod
     endinterface
+
+    interface Put request;
+        method Action put(AXI4_Lite_Write_Rq_Pkg#(addrwidth, datawidth) value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
+    interface Get response;
+        method ActionValue#(AXI4_Lite_Write_Rs_Pkg) get() if(False);
+            return unpack(0);
+        endmethod
+    endinterface
+
 endmodule
 
 function Action axi4_lite_write(AXI4_Lite_Master_Wr#(a, d) m,

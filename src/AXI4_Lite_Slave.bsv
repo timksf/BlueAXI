@@ -217,24 +217,87 @@ endmodule
 
 module mkAXI4_Lite_Slave_Rd_Dummy(AXI4_Lite_Slave_Rd#(addrwidth, datawidth));
     interface AXI4_Lite_Slave_Rd_Fab fab;
-
-        interface arready = False;
-
-        interface rvalid = False;
-        interface rdata = unpack(0);
-        interface rresp = unpack(0);
+        method arready = False;
+        method Action parvalid(Bool arvalid);
+            noAction;
+        endmethod
+        method Action paraddr(Bit#(addrwidth) a);
+            noAction;
+        endmethod
+        method Action parprot(AXI4_Lite_Prot p);
+            noAction;
+        endmethod
+        method rvalid = False;
+        method Action prready(Bool rready);
+            noAction;
+        endmethod
+        method rdata = unpack(0);
+        method rresp = unpack(0);
     endinterface
+
+    interface Get request;
+        method ActionValue#(AXI4_Lite_Read_Rq_Pkg#(addrwidth)) get() if(False);
+            return unpack(0);
+        endmethod
+    endinterface
+
+    method AXI4_Lite_Read_Rq_Pkg#(addrwidth) first() if(False);
+        return unpack(0);
+    endmethod
+
+    interface Put response;
+        method Action put(AXI4_Lite_Read_Rs_Pkg#(datawidth) value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
 endmodule
 
 module mkAXI4_Lite_Slave_Wr_Dummy(AXI4_Lite_Slave_Wr#(addrwidth, datawidth));
     interface AXI4_Lite_Slave_Wr_Fab fab;
-        interface awready = False;
-
-        interface wready = False;
-
-        interface bvalid = False;
-        interface bresp = unpack(0);
+        method awready = False;
+        method Action pawvalid(Bool awvalid);
+            noAction;
+        endmethod
+        method Action pawaddr(Bit#(addrwidth) a);
+            noAction;
+        endmethod
+        method Action pawprot(AXI4_Lite_Prot p);
+            noAction;
+        endmethod
+        method wready = False;
+        method Action pwvalid(Bool wvalid);
+            noAction;
+        endmethod
+        method Action pwdata(Bit#(datawidth) a);
+            noAction;
+        endmethod
+        method Action pwstrb(Bit#(TDiv#(datawidth, 8)) p);
+            noAction;
+        endmethod
+        method bvalid = False;
+        method Action pbready(Bool b);
+            noAction;
+        endmethod
+        method bresp = unpack(0);
     endinterface
+
+    interface Get request;
+        method ActionValue#(AXI4_Lite_Write_Rq_Pkg#(addrwidth, datawidth)) get() if(False);
+            return unpack(0);
+        endmethod
+    endinterface
+
+    method AXI4_Lite_Write_Rq_Pkg#(addrwidth, datawidth) first() if(False);
+        return unpack(0);
+    endmethod
+
+    interface Put response;
+        method Action put(AXI4_Lite_Write_Rs_Pkg value) if(False);
+            noAction;
+        endmethod
+    endinterface
+
 endmodule
 
 endpackage
